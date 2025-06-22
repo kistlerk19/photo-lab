@@ -1,70 +1,180 @@
-# Getting Started with Create React App
+# Photo Sharing Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, serverless photo sharing application built with React frontend and AWS Lambda backend. Users can upload images, view a gallery of photos, and automatically generate thumbnails using AWS services.
+
+# Author
+### Ishmael Gyamfi
+
+## Features
+
+- **Image Upload**: Drag & drop or browse to upload images (JPEG, PNG, GIF, WebP)
+- **Automatic Thumbnails**: Server-side thumbnail generation using AWS Lambda
+- **Gallery View**: Responsive grid layout with image previews
+- **Modal View**: Full-size image viewing with overlay
+- **Real-time Progress**: Upload progress tracking
+- **Error Handling**: Comprehensive error handling and user feedback
+- **File Validation**: Size and type validation (max 10MB)
+
+## Architecture
+
+### Frontend (React)
+- Modern React application with hooks
+- Responsive design with CSS Grid
+- Axios for HTTP requests
+- File upload with progress tracking
+- Image preview and modal functionality
+
+### Backend (AWS Lambda)
+- **Upload Handler** (`uploadHandler.py`): Generates presigned URLs for S3 uploads
+- **Image Resizer** (`imageResizer.py`): Automatically creates thumbnails when images are uploaded
+- **List Images** (`listImages.py`): Retrieves gallery images and serves individual images
+
+### AWS Services
+- **S3**: Image storage (original and thumbnails)
+- **Lambda**: Serverless functions for image processing
+- **API Gateway**: REST API endpoints
+- **CloudWatch**: Logging and monitoring
+
+## Project Structure
+
+```
+├── src/                    # React frontend source
+│   ├── App.js             # Main application component
+│   ├── App.css            # Application styles
+│   └── ...
+├── public/                # Static assets
+├── imageResizer.py        # Lambda: Thumbnail generation
+├── uploadHandler.py       # Lambda: Upload URL generation
+├── listImages.py          # Lambda: Gallery and image serving
+├── package.json           # Frontend dependencies
+└── README.md             # This file
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- npm or yarn
+- AWS Account with configured services
+
+### Frontend Setup
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Update API endpoint**:
+   - Edit `src/App.js`
+   - Update `API_BASE_URL` with your API Gateway URL
+
+3. **Start development server**:
+   ```bash
+   npm start
+   ```
+   Opens [http://localhost:3000](http://localhost:3000)
+
+### AWS Backend Setup
+
+1. **S3 Buckets**:
+   - Create bucket for original images (e.g., `photo-share-buck`)
+   - Create bucket for thumbnails (e.g., `photo-share-buck-resized`)
+   - Configure CORS for web access
+
+2. **Lambda Functions**:
+   - Deploy `uploadHandler.py` as Lambda function
+   - Deploy `imageResizer.py` as Lambda function with S3 trigger
+   - Deploy `listImages.py` as Lambda function
+   - Install required packages: `boto3`, `Pillow`
+
+3. **API Gateway**:
+   - Create REST API
+   - Configure endpoints:
+     - `POST /upload` → uploadHandler
+     - `GET /images` → listImages
+     - `GET /image/{key}` → listImages
+   - Enable CORS
+
+4. **Environment Variables**:
+   - `THUMBNAIL_BUCKET`: Name of thumbnail S3 bucket
 
 ## Available Scripts
 
-In the project directory, you can run:
-
 ### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Runs the app in development mode at [http://localhost:3000](http://localhost:3000)
 
 ### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Launches the test runner in interactive watch mode
 
 ### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Builds the app for production to the `build` folder
 
 ### `npm run eject`
+**Note: This is a one-way operation!** Ejects from Create React App
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Configuration
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Frontend Configuration
+- Update `API_BASE_URL` in `src/App.js` with your API Gateway endpoint
+- Modify upload limits and file types as needed
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Backend Configuration
+- Set S3 bucket names in Lambda environment variables
+- Configure thumbnail size in `imageResizer.py` (default: 300x300)
+- Adjust image quality settings in thumbnail generation
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Deployment
 
-## Learn More
+### Frontend Deployment
+1. Build the application: `npm run build`
+2. Deploy `build/` folder to:
+   - AWS S3 + CloudFront
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Backend Deployment
+- Ensure proper IAM permissions for Lambda functions
+- Configure S3 event triggers for image processing
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Features in Detail
 
-### Code Splitting
+### Image Upload Flow
+1. User selects/drops image file
+2. Frontend validates file type and size
+3. Request presigned URL from upload handler
+4. Direct upload to S3 using presigned URL
+5. S3 triggers image resizer Lambda
+6. Thumbnail generated and stored
+7. Gallery refreshes with new image
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Thumbnail Generation
+- Automatic processing on S3 upload events
+- Maintains aspect ratio
+- Converts to JPEG for optimization
+- Handles various input formats (PNG, GIF, WebP, etc.)
+- Error handling for corrupted images
 
-### Analyzing the Bundle Size
+### Gallery Features
+- Responsive grid layout
+- Lazy loading for performance
+- Click to view full-size images
+- File name and size display
+- Refresh functionality
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Troubleshooting
 
-### Making a Progressive Web App
+### Common Issues
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+**Upload fails with 403 error**:
+- Check S3 bucket permissions
+- Verify presigned URL generation
+- Ensure CORS is configured
 
-### Advanced Configuration
+**Images not displaying**:
+- Verify S3 bucket public access settings
+- Check API Gateway CORS configuration
+- Confirm thumbnail generation is working
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Thumbnail generation fails**:
+- Check Lambda function logs in CloudWatch
+- Verify Pillow library is included in deployment
+- Ensure proper S3 event trigger configuration
